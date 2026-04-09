@@ -297,7 +297,8 @@ const specialQuestions = [
             { label: '吃喝拉撒', value: 1 },
             { label: '艺术爱好', value: 2 },
             { label: '饮酒', value: 3 },
-            { label: '健身', value: 4 }
+            { label: '健身', value: 4 },
+            { label: '抽烟', value: 5 }
         ]
     },
     {
@@ -309,7 +310,17 @@ const specialQuestions = [
             { label: '小酌怡情，喝不了太多。', value: 1 },
             { label: '我习惯将白酒灌在保温杯，当白开水喝，酒精令我信服。', value: 2 }
         ]
-    }
+    },
+    {
+        id: 'smoker_gate_q2',
+        special: true,
+        kind: 'smoker_trigger',
+        text: '您对抽烟的态度是？',
+        options: [
+            { label: '偶尔抽一根，解解闷。', value: 1 },
+            { label: '我的一天从点燃第一根烟开始，烟雾是我灵魂的呼吸。', value: 2 }
+        ]
+    }    
 ];
 
 const TYPE_LIBRARY = {
@@ -474,6 +485,12 @@ const TYPE_LIBRARY = {
         "cn": "酒鬼",
         "intro": "烈酒烧喉，不得不醉。",
         "desc": "您为什么走路摇摇晃晃？您为什么总是情绪高涨？您为什么看东西是重影的？因为您体内流淌的不是血液，是美味的五粮液！是国窖1573！是江小白！是陕西五粮液！哦，美味的白酒，每一滴都在燃烧，都在沸腾。您是否已经习惯了将白酒灌入保温杯，当作白开水一饮而下？多么伟大的白酒！它让您在饭桌上谈笑风生，在厕所里抱着马桶忏悔人生；它让您觉得自己是夜场诗人，是宇宙中心那团不灭的火，直到第二天上午十点，您的头像裂开的核桃，嘴角挂着食物残渣，灵魂缩在角落里。您终于明白，昨晚那个高谈阔论、拍桌怒吼的人，已经成为了一个酒鬼。"
+    },
+    "SMOKER": {
+        "code": "SMOKER",
+        "cn": "烟鬼",
+        "intro": "烟雾缭绕，灵魂升腾。",
+        "desc": "您的肺不是肺，是两座永不停歇的烟囱！您的手指不是手指，是精密的打火机操作台！您的一天从点燃第一根烟开始，到最后一根烟熄灭结束。您是否已经习惯了用烟雾丈量时间？一根烟五分钟，一包烟两小时，一条烟就是一整天！多么美妙的烟草！它让您在焦虑时找到平静，在平静时找到焦虑；它让您觉得自己是吞云吐雾的仙人，是办公室里最潇洒的那个存在。直到某天您发现自己爬三楼就喘，咳嗽声比闹钟还准时，您终于明白，那个在烟雾中高谈阔论、指点江山的人，已经成为了一个烟鬼。"
     }
 };
 const TYPE_IMAGES = {
@@ -503,6 +520,7 @@ const TYPE_IMAGES = {
     "LOVE-R": "images/LOVE-R.png",
     "WOC!": "images/WOC.png",
     "DRUNK": "images/DRUNK.png",
+    "SMOKER": "images/SMOKER.png",
     "IMFW": "images/IMFW.png"
 };
 
@@ -688,11 +706,13 @@ const DIM_EXPLANATIONS = {
 const dimensionOrder = ['S1', 'S2', 'S3', 'E1', 'E2', 'E3', 'A1', 'A2', 'A3', 'Ac1', 'Ac2', 'Ac3', 'So1', 'So2', 'So3'];
 
 const DRUNK_TRIGGER_QUESTION_ID = 'drink_gate_q2';
+const SMOKER_TRIGGER_QUESTION_ID = 'smoker_gate_q2';
 
 const app = {
     shuffledQuestions: [],
     answers: {},
-    previewMode: false
+    previewMode: false,
+    showDimMode: false
 };
 
 const screens = {
@@ -727,15 +747,23 @@ function shuffle(array) {
 function getVisibleQuestions() {
     const visible = [...app.shuffledQuestions];
     const gateIndex = visible.findIndex(q => q.id === 'drink_gate_q1');
-    if (gateIndex !== -1 && app.answers['drink_gate_q1'] === 3) {
-        visible.splice(gateIndex + 1, 0, specialQuestions[1]);
+    if (gateIndex !== -1) {
+        let insertOffset = 1;
+        if (app.answers['drink_gate_q1'] === 3) {
+            visible.splice(gateIndex + insertOffset, 0, specialQuestions[1]);
+            insertOffset++;
+        }
+        if (app.answers['drink_gate_q1'] === 5) {
+            visible.splice(gateIndex + insertOffset, 0, specialQuestions[2]);
+        }
     }
     return visible;
 }
 
 function getQuestionMetaLabel(q) {
     if (q.special) return '补充题';
-    return app.previewMode ? dimensionMeta[q.dim].name : '维度已隐藏';
+    if (app.previewMode || app.showDimMode) return dimensionMeta[q.dim].name;
+    return '维度已隐藏';
 }
 
 function renderQuestions() {
@@ -752,7 +780,7 @@ function renderQuestions() {
           <div class="question-title">${q.text}</div>
           <div class="options">
             ${q.options.map((opt, i) => {
-            const code = ['A', 'B', 'C', 'D'][i] || String(i + 1);
+            const code = ['A', 'B', 'C', 'D', 'E'][i] || String(i + 1);
             const checked = app.answers[q.id] === opt.value ? 'checked' : '';
             return `
                 <label class="option">
@@ -775,6 +803,9 @@ function renderQuestions() {
             if (name === 'drink_gate_q1') {
                 if (Number(value) !== 3) {
                     delete app.answers['drink_gate_q2'];
+                }
+                if (Number(value) !== 5) {
+                    delete app.answers['smoker_gate_q2'];
                 }
                 renderQuestions();
                 return;
@@ -819,6 +850,10 @@ function getDrunkTriggered() {
     return app.answers[DRUNK_TRIGGER_QUESTION_ID] === 2;
 }
 
+function getSmokerTriggered() {
+    return app.answers[SMOKER_TRIGGER_QUESTION_ID] === 2;
+}
+
 function computeResult() {
     const rawScores = {};
     const levels = {};
@@ -852,6 +887,7 @@ function computeResult() {
 
     const bestNormal = ranked[0];
     const drunkTriggered = getDrunkTriggered();
+    const smokerTriggered = getSmokerTriggered();
 
     let finalType;
     let modeKicker = '你的主类型';
@@ -866,6 +902,13 @@ function computeResult() {
         modeKicker = '隐藏人格已激活';
         badge = '匹配度 100% · 酒精异常因子已接管';
         sub = '乙醇亲和性过强，系统已直接跳过常规人格审判。';
+        special = true;
+    } else if (smokerTriggered) {
+        finalType = TYPE_LIBRARY.SMOKER;
+        secondaryType = bestNormal;
+        modeKicker = '隐藏人格已激活';
+        badge = '匹配度 100% · 尼古丁异常因子已接管';
+        sub = '烟草亲和性过强，系统已直接跳过常规人格审判。';
         special = true;
     } else if (bestNormal.similarity < 60) {
         finalType = TYPE_LIBRARY.HHHH;
@@ -958,6 +1001,12 @@ document.getElementById('backIntroBtn').addEventListener('click', () => showScre
 document.getElementById('submitBtn').addEventListener('click', renderResult);
 document.getElementById('restartBtn').addEventListener('click', () => startTest(false));
 document.getElementById('toTopBtn').addEventListener('click', () => showScreen('intro'));
+document.getElementById('toggleDimBtn').addEventListener('click', () => {
+    app.showDimMode = !app.showDimMode;
+    const btn = document.getElementById('toggleDimBtn');
+    btn.textContent = app.showDimMode ? '隐藏维度' : '显示维度';
+    renderQuestions();
+});
 
 function renderTypesPreview() {
     const typesGrid = document.getElementById('typesGrid');

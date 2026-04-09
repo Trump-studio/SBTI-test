@@ -245,6 +245,28 @@ button:disabled {
     white-space: nowrap;
 }
 
+.topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.btn-dim-toggle {
+    background: var(--accent);
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all .2s;
+}
+
+.btn-dim-toggle:hover {
+    background: var(--accent-strong);
+}
+
 .question-list {
     display: grid;
     gap: 16px;
