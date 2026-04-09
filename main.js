@@ -761,7 +761,12 @@ function getVisibleQuestions() {
 }
 
 function getQuestionMetaLabel(q) {
-    if (q.special) return '补充题';
+    if (q.special) {
+        if (app.previewMode || app.showDimMode) {
+            return '补充题';
+        }
+        return '维度已隐藏';
+    }
     if (app.previewMode || app.showDimMode) return dimensionMeta[q.dim].name;
     return '维度已隐藏';
 }
